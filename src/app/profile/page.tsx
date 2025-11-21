@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import { User, Settings, Crown, LogOut, ChevronRight, Scale, Ruler, Calendar, Target } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import BottomNav from '@/components/bottom-nav';
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [userData] = useState({
     name: 'Usuário',
     email: 'usuario@nutrify.com',
@@ -14,6 +16,27 @@ export default function ProfilePage() {
     goal: 'Emagrecer',
     isPremium: false,
   });
+
+  const handleViewPlans = () => {
+    router.push('/plans');
+  };
+
+  const handleEditProfile = () => {
+    router.push('/profile/edit');
+  };
+
+  const handleChangeGoal = () => {
+    router.push('/profile/goal');
+  };
+
+  const handlePreferences = () => {
+    router.push('/profile/preferences');
+  };
+
+  const handleLogout = () => {
+    // Implementar lógica de logout
+    router.push('/');
+  };
 
   return (
     <div className="min-h-screen bg-[#121212] pb-20">
@@ -83,7 +106,10 @@ export default function ProfilePage() {
                 <p className="text-sm text-[#121212]/80 mb-3">
                   Desbloqueie treinos avançados, planos personalizados e muito mais!
                 </p>
-                <button className="bg-[#121212] text-[#FFC107] px-6 py-2 rounded-xl font-semibold text-sm hover:bg-[#1E1E1E] transition-colors">
+                <button 
+                  onClick={handleViewPlans}
+                  className="bg-[#121212] text-[#FFC107] px-6 py-2 rounded-xl font-semibold text-sm hover:bg-[#1E1E1E] transition-colors"
+                >
                   Ver Planos
                 </button>
               </div>
@@ -98,7 +124,10 @@ export default function ProfilePage() {
           Configurações
         </h2>
 
-        <button className="w-full bg-[#1E1E1E] p-4 rounded-xl border border-[#2A2A2A] flex items-center justify-between hover:border-[#4CAF50] transition-colors">
+        <button 
+          onClick={handleEditProfile}
+          className="w-full bg-[#1E1E1E] p-4 rounded-xl border border-[#2A2A2A] flex items-center justify-between hover:border-[#4CAF50] transition-colors"
+        >
           <div className="flex items-center gap-3">
             <Settings className="w-5 h-5 text-[#4CAF50]" />
             <span className="text-white">Editar Perfil</span>
@@ -106,7 +135,10 @@ export default function ProfilePage() {
           <ChevronRight className="w-5 h-5 text-[#B0B0B0]" />
         </button>
 
-        <button className="w-full bg-[#1E1E1E] p-4 rounded-xl border border-[#2A2A2A] flex items-center justify-between hover:border-[#4CAF50] transition-colors">
+        <button 
+          onClick={handleChangeGoal}
+          className="w-full bg-[#1E1E1E] p-4 rounded-xl border border-[#2A2A2A] flex items-center justify-between hover:border-[#4CAF50] transition-colors"
+        >
           <div className="flex items-center gap-3">
             <Target className="w-5 h-5 text-[#4CAF50]" />
             <span className="text-white">Alterar Meta</span>
@@ -114,7 +146,10 @@ export default function ProfilePage() {
           <ChevronRight className="w-5 h-5 text-[#B0B0B0]" />
         </button>
 
-        <button className="w-full bg-[#1E1E1E] p-4 rounded-xl border border-[#2A2A2A] flex items-center justify-between hover:border-[#4CAF50] transition-colors">
+        <button 
+          onClick={handlePreferences}
+          className="w-full bg-[#1E1E1E] p-4 rounded-xl border border-[#2A2A2A] flex items-center justify-between hover:border-[#4CAF50] transition-colors"
+        >
           <div className="flex items-center gap-3">
             <Settings className="w-5 h-5 text-[#4CAF50]" />
             <span className="text-white">Preferências</span>
@@ -122,7 +157,10 @@ export default function ProfilePage() {
           <ChevronRight className="w-5 h-5 text-[#B0B0B0]" />
         </button>
 
-        <button className="w-full bg-[#1E1E1E] p-4 rounded-xl border border-[#2A2A2A] flex items-center justify-between hover:border-red-500 transition-colors mt-6">
+        <button 
+          onClick={handleLogout}
+          className="w-full bg-[#1E1E1E] p-4 rounded-xl border border-[#2A2A2A] flex items-center justify-between hover:border-red-500 transition-colors mt-6"
+        >
           <div className="flex items-center gap-3">
             <LogOut className="w-5 h-5 text-red-500" />
             <span className="text-red-500">Sair</span>

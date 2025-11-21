@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Plus, Search, Utensils, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, Utensils, ChevronLeft, ChevronRight, Edit2, Trash2 } from 'lucide-react';
 import { useNutrify } from '@/lib/nutrify-context';
 import { mockMeals } from '@/lib/nutrify-mock-data';
 import BottomNav from '@/components/bottom-nav';
@@ -12,6 +12,8 @@ export default function NutritionPage() {
   const { userProfile, dailyLog, setDailyLog } = useNutrify();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddMeal, setShowAddMeal] = useState(false);
+  const [showEditMeal, setShowEditMeal] = useState(false);
+  const [editingMeal, setEditingMeal] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   const meals = dailyLog?.meals || [];
@@ -65,12 +67,82 @@ export default function NutritionPage() {
     setCurrentPage(1);
   };
 
+  const deleteMeal = (mealId: string) => {
+    const updatedMeals = meals.filter(meal => meal.id !== mealId);
+    setDailyLog({
+      date: new Date().toISOString().split('T')[0],
+      meals: updatedMeals,
+      waterIntake: dailyLog?.waterIntake || 0,
+      workoutCompleted: dailyLog?.workoutCompleted || false
+    });
+  };
+
+  const openEditMeal = (meal: any) => {
+    setEditingMeal(meal);
+    setShowEditMeal(true);
+    setSearchQuery('');
+    setCurrentPage(1);
+  };
+
+  const updateMeal = (newMealData: typeof mockMeals[0]) => {
+    const updatedMeals = meals.map(meal => 
+      meal.id === editingMeal.id 
+        ? { ...newMealData, id: meal.id, time: meal.time }
+        : meal
+    );
+
+    setDailyLog({
+      date: new Date().toISOString().split('T')[0],
+      meals: updatedMeals,
+      waterIntake: dailyLog?.waterIntake || 0,
+      workoutCompleted: dailyLog?.workoutCompleted || false
+    });
+
+    setShowEditMeal(false);
+    setEditingMeal(null);
+    setSearchQuery('');
+    setCurrentPage(1);
+  };
+
   const mealsByType = {
     breakfast: meals.filter(m => m.mealType === 'breakfast'),
     lunch: meals.filter(m => m.mealType === 'lunch'),
     dinner: meals.filter(m => m.mealType === 'dinner'),
     snack: meals.filter(m => m.mealType === 'snack'),
   };
+
+  const renderMealCard = (meal: any) => (
+    <div key={meal.id} className="bg-[#1E1E1E] rounded-xl p-4 border border-[#2A2A2A]">
+      <div className="flex justify-between items-start mb-2">
+        <div className="flex-1">
+          <div className="font-semibold">{meal.name}</div>
+          <div className="text-xs text-[#B0B0B0]">{meal.portion}</div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="text-[#4CAF50] font-bold">{meal.calories} cal</div>
+          <button
+            onClick={() => openEditMeal(meal)}
+            className="w-8 h-8 rounded-lg bg-[#2A2A2A] flex items-center justify-center hover:bg-[#FFC107] hover:text-black transition-colors"
+            title="Editar refeição"
+          >
+            <Edit2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => deleteMeal(meal.id)}
+            className="w-8 h-8 rounded-lg bg-[#2A2A2A] flex items-center justify-center hover:bg-[#F44336] transition-colors"
+            title="Excluir refeição"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+      <div className="flex gap-3 text-xs text-[#B0B0B0]">
+        <span>P: {meal.protein}g</span>
+        <span>C: {meal.carbs}g</span>
+        <span>G: {meal.fat}g</span>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#121212] pb-20">
@@ -125,22 +197,7 @@ export default function NutritionPage() {
           </div>
           {mealsByType.breakfast.length > 0 ? (
             <div className="space-y-2">
-              {mealsByType.breakfast.map(meal => (
-                <div key={meal.id} className="bg-[#1E1E1E] rounded-xl p-4 border border-[#2A2A2A]">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <div className="font-semibold">{meal.name}</div>
-                      <div className="text-xs text-[#B0B0B0]">{meal.portion}</div>
-                    </div>
-                    <div className="text-[#4CAF50] font-bold">{meal.calories} cal</div>
-                  </div>
-                  <div className="flex gap-3 text-xs text-[#B0B0B0]">
-                    <span>P: {meal.protein}g</span>
-                    <span>C: {meal.carbs}g</span>
-                    <span>G: {meal.fat}g</span>
-                  </div>
-                </div>
-              ))}
+              {mealsByType.breakfast.map(meal => renderMealCard(meal))}
             </div>
           ) : (
             <div className="bg-[#1E1E1E] rounded-xl p-4 border border-dashed border-[#2A2A2A] text-center text-[#B0B0B0] text-sm">
@@ -162,22 +219,7 @@ export default function NutritionPage() {
           </div>
           {mealsByType.lunch.length > 0 ? (
             <div className="space-y-2">
-              {mealsByType.lunch.map(meal => (
-                <div key={meal.id} className="bg-[#1E1E1E] rounded-xl p-4 border border-[#2A2A2A]">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <div className="font-semibold">{meal.name}</div>
-                      <div className="text-xs text-[#B0B0B0]">{meal.portion}</div>
-                    </div>
-                    <div className="text-[#4CAF50] font-bold">{meal.calories} cal</div>
-                  </div>
-                  <div className="flex gap-3 text-xs text-[#B0B0B0]">
-                    <span>P: {meal.protein}g</span>
-                    <span>C: {meal.carbs}g</span>
-                    <span>G: {meal.fat}g</span>
-                  </div>
-                </div>
-              ))}
+              {mealsByType.lunch.map(meal => renderMealCard(meal))}
             </div>
           ) : (
             <div className="bg-[#1E1E1E] rounded-xl p-4 border border-dashed border-[#2A2A2A] text-center text-[#B0B0B0] text-sm">
@@ -199,22 +241,7 @@ export default function NutritionPage() {
           </div>
           {mealsByType.dinner.length > 0 ? (
             <div className="space-y-2">
-              {mealsByType.dinner.map(meal => (
-                <div key={meal.id} className="bg-[#1E1E1E] rounded-xl p-4 border border-[#2A2A2A]">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <div className="font-semibold">{meal.name}</div>
-                      <div className="text-xs text-[#B0B0B0]">{meal.portion}</div>
-                    </div>
-                    <div className="text-[#4CAF50] font-bold">{meal.calories} cal</div>
-                  </div>
-                  <div className="flex gap-3 text-xs text-[#B0B0B0]">
-                    <span>P: {meal.protein}g</span>
-                    <span>C: {meal.carbs}g</span>
-                    <span>G: {meal.fat}g</span>
-                  </div>
-                </div>
-              ))}
+              {mealsByType.dinner.map(meal => renderMealCard(meal))}
             </div>
           ) : (
             <div className="bg-[#1E1E1E] rounded-xl p-4 border border-dashed border-[#2A2A2A] text-center text-[#B0B0B0] text-sm">
@@ -236,22 +263,7 @@ export default function NutritionPage() {
           </div>
           {mealsByType.snack.length > 0 ? (
             <div className="space-y-2">
-              {mealsByType.snack.map(meal => (
-                <div key={meal.id} className="bg-[#1E1E1E] rounded-xl p-4 border border-[#2A2A2A]">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <div className="font-semibold">{meal.name}</div>
-                      <div className="text-xs text-[#B0B0B0]">{meal.portion}</div>
-                    </div>
-                    <div className="text-[#4CAF50] font-bold">{meal.calories} cal</div>
-                  </div>
-                  <div className="flex gap-3 text-xs text-[#B0B0B0]">
-                    <span>P: {meal.protein}g</span>
-                    <span>C: {meal.carbs}g</span>
-                    <span>G: {meal.fat}g</span>
-                  </div>
-                </div>
-              ))}
+              {mealsByType.snack.map(meal => renderMealCard(meal))}
             </div>
           ) : (
             <div className="bg-[#1E1E1E] rounded-xl p-4 border border-dashed border-[#2A2A2A] text-center text-[#B0B0B0] text-sm">
@@ -306,6 +318,106 @@ export default function NutritionPage() {
                         <div className="text-xs text-[#B0B0B0]">{meal.portion}</div>
                       </div>
                       <div className="text-[#4CAF50] font-bold">{meal.calories} cal</div>
+                    </div>
+                    <div className="flex gap-3 text-xs text-[#B0B0B0]">
+                      <span>P: {meal.protein}g</span>
+                      <span>C: {meal.carbs}g</span>
+                      <span>G: {meal.fat}g</span>
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="text-center text-[#B0B0B0] py-8">
+                  Nenhum alimento encontrado
+                </div>
+              )}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="p-6 border-t border-[#2A2A2A]">
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#2A2A2A] hover:bg-[#333] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span className="text-sm">Anterior</span>
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-[#B0B0B0]">
+                      Página {currentPage} de {totalPages}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#2A2A2A] hover:bg-[#333] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <span className="text-sm">Próxima</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Meal Modal */}
+      {showEditMeal && editingMeal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-[#1E1E1E] rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-[#2A2A2A]">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold">Alterar Refeição</h2>
+                <button
+                  onClick={() => {
+                    setShowEditMeal(false);
+                    setEditingMeal(null);
+                    setSearchQuery('');
+                    setCurrentPage(1);
+                  }}
+                  className="w-8 h-8 rounded-full bg-[#2A2A2A] flex items-center justify-center hover:bg-[#333] transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="bg-[#121212] rounded-xl p-4 border border-[#FFC107] mb-4">
+                <div className="text-sm text-[#B0B0B0] mb-1">Refeição atual:</div>
+                <div className="font-semibold text-[#FFC107]">{editingMeal.name}</div>
+                <div className="text-xs text-[#B0B0B0]">{editingMeal.portion} - {editingMeal.calories} cal</div>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#B0B0B0]" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  placeholder="Buscar novo alimento..."
+                  className="w-full bg-[#121212] border border-[#2A2A2A] rounded-xl pl-10 pr-4 py-3 text-white placeholder:text-[#666] focus:border-[#FFC107] focus:outline-none"
+                />
+              </div>
+            </div>
+            
+            {/* Results with Pagination */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-2">
+              {paginatedMeals.length > 0 ? (
+                paginatedMeals.map(meal => (
+                  <button
+                    key={meal.id}
+                    onClick={() => updateMeal(meal)}
+                    className="w-full bg-[#121212] rounded-xl p-4 border border-[#2A2A2A] hover:border-[#FFC107] transition-colors text-left"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <div className="font-semibold">{meal.name}</div>
+                        <div className="text-xs text-[#B0B0B0]">{meal.portion}</div>
+                      </div>
+                      <div className="text-[#FFC107] font-bold">{meal.calories} cal</div>
                     </div>
                     <div className="flex gap-3 text-xs text-[#B0B0B0]">
                       <span>P: {meal.protein}g</span>
