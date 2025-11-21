@@ -1,242 +1,204 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { Flame, Droplet, Dumbbell, Sparkles, ScanBarcode, TrendingUp } from 'lucide-react';
 import { useNutrify } from '@/lib/nutrify-context';
-import { BottomNav } from '@/components/nutrify/bottom-nav';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import {
-  Flame,
-  Droplet,
-  Play,
-  Scan,
-  Sparkles,
-  TrendingUp,
-  Apple,
-  Zap,
-} from 'lucide-react';
-
-// Helper para garantir número válido
-const safeNumber = (value: any, fallback: number = 0): number => {
-  const num = Number(value);
-  return isNaN(num) || !isFinite(num) ? fallback : num;
-};
+import BottomNav from '@/components/bottom-nav';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, dailyStats, waterIntake, addWater } = useNutrify();
+  const { userProfile, dailyLog, workouts } = useNutrify();
+  const [mounted, setMounted] = useState(false);
+  const [waterGlasses, setWaterGlasses] = useState(0);
 
   useEffect(() => {
-    if (!user) {
+    setMounted(true);
+    if (!userProfile) {
       router.push('/onboarding');
     }
-  }, [user, router]);
+  }, [userProfile, router]);
 
-  if (!user) return null;
+  if (!mounted || !userProfile) {
+    return null;
+  }
 
-  // Garantir que todos os valores são números válidos ANTES de qualquer cálculo
-  const dailyCalories = safeNumber(user.dailyCalories, 2000);
-  const caloriesConsumed = safeNumber(dailyStats.caloriesConsumed, 0);
-  const caloriesBurned = safeNumber(dailyStats.caloriesBurned, 0);
-  const protein = safeNumber(dailyStats.protein, 0);
-  const carbs = safeNumber(dailyStats.carbs, 0);
-  const fat = safeNumber(dailyStats.fat, 0);
-  const water = safeNumber(waterIntake, 0);
-  
-  const macroProtein = safeNumber(user.macros?.protein, 150);
-  const macroCarbs = safeNumber(user.macros?.carbs, 200);
-  const macroFat = safeNumber(user.macros?.fat, 60);
+  const consumedCalories = dailyLog?.meals.reduce((sum, meal) => sum + meal.calories, 0) || 0;
+  const remainingCalories = userProfile.targetCalories - consumedCalories;
+  const consumedProtein = dailyLog?.meals.reduce((sum, meal) => sum + meal.protein, 0) || 0;
+  const consumedCarbs = dailyLog?.meals.reduce((sum, meal) => sum + meal.carbs, 0) || 0;
+  const consumedFat = dailyLog?.meals.reduce((sum, meal) => sum + meal.fat, 0) || 0;
 
-  // Agora fazer os cálculos com valores seguros
-  const caloriesRemaining = Math.max(0, dailyCalories - caloriesConsumed + caloriesBurned);
-  const caloriesProgress = dailyCalories > 0 ? (caloriesConsumed / dailyCalories) * 100 : 0;
-  
-  const waterGoal = 2000; // 2L
-  const waterProgress = (water / waterGoal) * 100;
-
-  // Calcular progresso dos macros com segurança
-  const proteinProgress = macroProtein > 0 ? (protein / macroProtein) * 100 : 0;
-  const carbsProgress = macroCarbs > 0 ? (carbs / macroCarbs) * 100 : 0;
-  const fatProgress = macroFat > 0 ? (fat / macroFat) * 100 : 0;
+  const todayWorkout = workouts.find(w => !w.completed);
 
   return (
-    <div className="min-h-screen bg-[#F7F9FA] dark:bg-[#121212] pb-20">
+    <div className="min-h-screen bg-[#121212] pb-20">
       {/* Header */}
-      <div className="bg-gradient-to-br from-[#4CAF50] to-[#2E7D32] text-white p-6 rounded-b-3xl">
+      <div className="bg-gradient-to-b from-[#1E1E1E] to-[#121212] p-6 pb-8">
         <div className="max-w-lg mx-auto">
-          <h1 className="text-2xl font-bold mb-1">Olá, {user.name}! 👋</h1>
-          <p className="text-white/80">Vamos conquistar seus objetivos hoje</p>
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-2xl font-bold">Olá, {userProfile.name}! 👋</h1>
+              <p className="text-[#B0B0B0] text-sm">Vamos conquistar o dia</p>
+            </div>
+            <button
+              onClick={() => router.push('/profile')}
+              className="w-12 h-12 rounded-full bg-gradient-to-br from-[#4CAF50] to-[#66BB6A] flex items-center justify-center text-white font-bold text-lg"
+            >
+              {userProfile.name.charAt(0).toUpperCase()}
+            </button>
+          </div>
+
+          {/* Calories Card */}
+          <div className="bg-gradient-to-br from-[#4CAF50]/20 to-[#66BB6A]/10 border border-[#4CAF50]/30 rounded-3xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-[#4CAF50]/20 flex items-center justify-center">
+                <Flame className="w-6 h-6 text-[#4CAF50]" />
+              </div>
+              <div>
+                <div className="text-sm text-[#B0B0B0]">Calorias Restantes</div>
+                <div className="text-3xl font-bold text-[#4CAF50]">{remainingCalories}</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[#4CAF50]/20">
+              <div>
+                <div className="text-xs text-[#B0B0B0] mb-1">Proteína</div>
+                <div className="text-lg font-semibold">
+                  {consumedProtein}<span className="text-sm text-[#B0B0B0]">/{userProfile.targetProtein}g</span>
+                </div>
+                <div className="h-1.5 bg-[#2A2A2A] rounded-full overflow-hidden mt-2">
+                  <div
+                    className="h-full bg-[#4CAF50]"
+                    style={{ width: `${Math.min((consumedProtein / userProfile.targetProtein) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-[#B0B0B0] mb-1">Carbos</div>
+                <div className="text-lg font-semibold">
+                  {consumedCarbs}<span className="text-sm text-[#B0B0B0]">/{userProfile.targetCarbs}g</span>
+                </div>
+                <div className="h-1.5 bg-[#2A2A2A] rounded-full overflow-hidden mt-2">
+                  <div
+                    className="h-full bg-[#FFC107]"
+                    style={{ width: `${Math.min((consumedCarbs / userProfile.targetCarbs) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-[#B0B0B0] mb-1">Gordura</div>
+                <div className="text-lg font-semibold">
+                  {consumedFat}<span className="text-sm text-[#B0B0B0]">/{userProfile.targetFat}g</span>
+                </div>
+                <div className="h-1.5 bg-[#2A2A2A] rounded-full overflow-hidden mt-2">
+                  <div
+                    className="h-full bg-[#FF9800]"
+                    style={{ width: `${Math.min((consumedFat / userProfile.targetFat) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 -mt-8 space-y-4">
-        {/* Calories Card */}
-        <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Flame className="w-6 h-6 text-[#FFC107]" />
-              <h2 className="text-lg font-bold">Calorias</h2>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-[#4CAF50]">
-                {Math.round(caloriesRemaining)}
+      {/* Content */}
+      <div className="max-w-lg mx-auto px-6 space-y-6">
+        {/* Today's Workout */}
+        {todayWorkout && (
+          <div className="bg-[#1E1E1E] rounded-2xl p-6 border border-[#2A2A2A]">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-[#4CAF50]/20 flex items-center justify-center">
+                <Dumbbell className="w-5 h-5 text-[#4CAF50]" />
               </div>
-              <div className="text-sm text-gray-500">restantes</div>
-            </div>
-          </div>
-
-          <Progress value={Math.min(caloriesProgress, 100)} className="h-3 mb-3" />
-
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-sm text-gray-500">Meta</div>
-              <div className="font-bold">{Math.round(dailyCalories)}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Consumidas</div>
-              <div className="font-bold text-[#4CAF50]">{Math.round(caloriesConsumed)}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Queimadas</div>
-              <div className="font-bold text-[#FFC107]">{Math.round(caloriesBurned)}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Macros */}
-        <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-lg p-6">
-          <h3 className="font-bold mb-4">Macronutrientes</h3>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>Proteína</span>
-                <span className="font-semibold">
-                  {Math.round(protein)}g / {Math.round(macroProtein)}g
-                </span>
+              <div className="flex-1">
+                <div className="text-sm text-[#B0B0B0]">Treino de Hoje</div>
+                <div className="font-semibold">{todayWorkout.name}</div>
               </div>
-              <Progress
-                value={Math.min(proteinProgress, 100)}
-                className="h-2"
-              />
             </div>
-
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>Carboidratos</span>
-                <span className="font-semibold">
-                  {Math.round(carbs)}g / {Math.round(macroCarbs)}g
-                </span>
-              </div>
-              <Progress
-                value={Math.min(carbsProgress, 100)}
-                className="h-2"
-              />
+            <div className="flex items-center gap-2 text-sm text-[#B0B0B0] mb-4">
+              <span>{todayWorkout.exercises.length} exercícios</span>
+              <span>•</span>
+              <span>{todayWorkout.duration} min</span>
             </div>
-
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>Gordura</span>
-                <span className="font-semibold">
-                  {Math.round(fat)}g / {Math.round(macroFat)}g
-                </span>
-              </div>
-              <Progress
-                value={Math.min(fatProgress, 100)}
-                className="h-2"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Workout of the Day */}
-        <div className="bg-gradient-to-br from-[#4CAF50] to-[#2E7D32] text-white rounded-2xl shadow-lg p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Zap className="w-5 h-5" />
-            <h3 className="font-bold">Treino do Dia</h3>
-          </div>
-          <h4 className="text-xl font-bold mb-2">Treino Full Body Iniciante</h4>
-          <p className="text-white/80 mb-4">20 min • 150 cal</p>
-          <Link href="/workouts">
-            <Button className="w-full bg-white text-[#4CAF50] hover:bg-white/90">
-              <Play className="w-4 h-4 mr-2" />
+            <button
+              onClick={() => router.push('/workouts')}
+              className="w-full bg-gradient-to-r from-[#4CAF50] to-[#66BB6A] text-white py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-[#4CAF50]/20 transition-all"
+            >
               Iniciar Treino
-            </Button>
-          </Link>
-        </div>
+            </button>
+          </div>
+        )}
 
-        {/* Water Intake */}
-        <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Droplet className="w-6 h-6 text-blue-500" />
-              <h3 className="font-bold">Hidratação</h3>
+        {/* Hydration */}
+        <div className="bg-[#1E1E1E] rounded-2xl p-6 border border-[#2A2A2A]">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+              <Droplet className="w-5 h-5 text-blue-400" />
             </div>
-            <div className="text-right">
-              <div className="text-lg font-bold">{Math.round(water)}ml</div>
-              <div className="text-sm text-gray-500">de {waterGoal}ml</div>
+            <div className="flex-1">
+              <div className="text-sm text-[#B0B0B0]">Hidratação</div>
+              <div className="font-semibold">{waterGlasses} / 8 copos</div>
             </div>
           </div>
-
-          <Progress value={Math.min(waterProgress, 100)} className="h-3 mb-4" />
-
-          <div className="flex gap-2">
-            <Button
-              onClick={() => addWater(250)}
-              variant="outline"
-              size="sm"
-              className="flex-1"
-            >
-              +250ml
-            </Button>
-            <Button
-              onClick={() => addWater(500)}
-              variant="outline"
-              size="sm"
-              className="flex-1"
-            >
-              +500ml
-            </Button>
+          <div className="grid grid-cols-8 gap-2">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setWaterGlasses(Math.max(0, i === waterGlasses - 1 ? i : i + 1))}
+                className={`aspect-square rounded-lg transition-all ${
+                  i < waterGlasses
+                    ? 'bg-blue-500'
+                    : 'bg-[#2A2A2A] hover:bg-[#333]'
+                }`}
+              >
+                <Droplet className={`w-4 h-4 mx-auto ${i < waterGlasses ? 'text-white' : 'text-[#666]'}`} />
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4">
-          <Link href="/scanner">
-            <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-lg p-6 text-center hover:scale-105 transition-transform">
-              <Scan className="w-8 h-8 mx-auto mb-2 text-[#4CAF50]" />
-              <div className="font-semibold">Scanner</div>
-              <div className="text-xs text-gray-500">Escanear alimento</div>
+          <button
+            onClick={() => router.push('/coach')}
+            className="bg-gradient-to-br from-purple-500/20 to-pink-500/10 border border-purple-500/30 rounded-2xl p-6 text-left hover:scale-105 transition-transform"
+          >
+            <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center mb-3">
+              <Sparkles className="w-6 h-6 text-purple-400" />
             </div>
-          </Link>
+            <div className="font-semibold mb-1">Coach IA</div>
+            <div className="text-xs text-[#B0B0B0]">Tire suas dúvidas</div>
+          </button>
 
-          <Link href="/coach">
-            <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-lg p-6 text-center hover:scale-105 transition-transform">
-              <Sparkles className="w-8 h-8 mx-auto mb-2 text-[#FFC107]" />
-              <div className="font-semibold">Coach IA</div>
-              <div className="text-xs text-gray-500">Dicas e motivação</div>
+          <button
+            onClick={() => router.push('/scanner')}
+            className="bg-gradient-to-br from-[#FFC107]/20 to-[#FF9800]/10 border border-[#FFC107]/30 rounded-2xl p-6 text-left hover:scale-105 transition-transform"
+          >
+            <div className="w-12 h-12 rounded-full bg-[#FFC107]/20 flex items-center justify-center mb-3">
+              <ScanBarcode className="w-6 h-6 text-[#FFC107]" />
             </div>
-          </Link>
+            <div className="font-semibold mb-1">Scanner</div>
+            <div className="text-xs text-[#B0B0B0]">Escanear alimento</div>
+          </button>
         </div>
 
-        {/* Premium Banner */}
-        {!user.isPremium && (
-          <div className="bg-gradient-to-r from-[#FFC107] to-[#FF9800] rounded-2xl shadow-lg p-6 text-white">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="font-bold text-lg mb-1">Upgrade para Premium</h3>
-                <p className="text-sm text-white/90 mb-4">
-                  Desbloqueie treinos completos, IA ilimitada e muito mais
-                </p>
-                <Button className="bg-white text-[#FF9800] hover:bg-white/90">
-                  Ver Planos
-                </Button>
-              </div>
-              <Sparkles className="w-8 h-8" />
+        {/* Progress Teaser */}
+        <button
+          onClick={() => router.push('/progress')}
+          className="w-full bg-[#1E1E1E] rounded-2xl p-6 border border-[#2A2A2A] text-left hover:border-[#4CAF50]/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#4CAF50]/20 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-[#4CAF50]" />
+            </div>
+            <div className="flex-1">
+              <div className="font-semibold mb-1">Ver Progresso</div>
+              <div className="text-sm text-[#B0B0B0]">Acompanhe sua evolução</div>
             </div>
           </div>
-        )}
+        </button>
       </div>
 
       <BottomNav />

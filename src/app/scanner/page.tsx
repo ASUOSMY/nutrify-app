@@ -1,268 +1,179 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { BottomNav } from '@/components/nutrify/bottom-nav';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { mockFoods } from '@/lib/mock-data';
-import { calculateFoodScore } from '@/lib/calculations';
-import { Scan, Camera, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { ScanBarcode, Camera } from 'lucide-react';
+import BottomNav from '@/components/bottom-nav';
 
 export default function ScannerPage() {
-  const router = useRouter();
-  const [barcode, setBarcode] = useState('');
-  const [scannedFood, setScannedFood] = useState<any>(null);
+  const [scannedProduct, setScannedProduct] = useState<any>(null);
   const [isScanning, setIsScanning] = useState(false);
 
-  const handleScan = () => {
+  const mockScan = () => {
     setIsScanning(true);
-
-    // Simulate scanning
     setTimeout(() => {
-      // Find random food from mock data
-      const randomFood = mockFoods[Math.floor(Math.random() * mockFoods.length)];
-      const { score, grade } = calculateFoodScore(randomFood);
-
-      setScannedFood({
-        ...randomFood,
-        score,
-        grade,
+      setScannedProduct({
+        name: 'Whey Protein Concentrado',
+        brand: 'Growth Supplements',
+        barcode: '7898357410015',
+        calories: 120,
+        protein: 24,
+        carbs: 3,
+        fat: 1.5,
+        portion: '30g (1 scoop)',
+        score: 'A',
+        ingredients: ['Proteína do soro do leite', 'Cacau', 'Aroma natural', 'Sucralose']
       });
       setIsScanning(false);
     }, 2000);
   };
 
-  const getGradeColor = (grade: string) => {
-    switch (grade) {
-      case 'A':
-        return 'bg-green-500';
-      case 'B':
-        return 'bg-blue-500';
-      case 'C':
-        return 'bg-yellow-500';
-      case 'D':
-        return 'bg-orange-500';
-      case 'E':
-        return 'bg-red-500';
-      default:
-        return 'bg-gray-500';
+  const getScoreColor = (score: string) => {
+    switch (score) {
+      case 'A': return 'text-[#4CAF50] bg-[#4CAF50]/20';
+      case 'B': return 'text-[#8BC34A] bg-[#8BC34A]/20';
+      case 'C': return 'text-[#FFC107] bg-[#FFC107]/20';
+      case 'D': return 'text-[#FF9800] bg-[#FF9800]/20';
+      case 'E': return 'text-[#F44336] bg-[#F44336]/20';
+      default: return 'text-[#B0B0B0] bg-[#2A2A2A]';
     }
-  };
-
-  const getAlerts = (food: any) => {
-    const alerts = [];
-
-    if (food.isUltraProcessed) {
-      alerts.push({
-        type: 'warning',
-        message: 'Alimento ultraprocessado',
-      });
-    }
-
-    if (food.sugar && food.sugar > 10) {
-      alerts.push({
-        type: 'warning',
-        message: 'Alto teor de açúcar',
-      });
-    }
-
-    if (food.sodium && food.sodium > 400) {
-      alerts.push({
-        type: 'warning',
-        message: 'Alto teor de sódio',
-      });
-    }
-
-    if (food.fiber && food.fiber > 5) {
-      alerts.push({
-        type: 'success',
-        message: 'Rico em fibras',
-      });
-    }
-
-    if (food.protein > 15) {
-      alerts.push({
-        type: 'success',
-        message: 'Boa fonte de proteína',
-      });
-    }
-
-    return alerts;
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F9FA] dark:bg-[#121212] pb-20">
+    <div className="min-h-screen bg-[#121212] pb-20">
       {/* Header */}
-      <div className="bg-gradient-to-br from-[#4CAF50] to-[#2E7D32] text-white p-6">
+      <div className="bg-[#1E1E1E] p-6 border-b border-[#2A2A2A]">
         <div className="max-w-lg mx-auto">
-          <h1 className="text-3xl font-bold mb-2">Scanner</h1>
-          <p className="text-white/80">Escaneie códigos de barras</p>
+          <h1 className="text-2xl font-bold mb-2">Scanner Nutricional</h1>
+          <p className="text-[#B0B0B0]">Escaneie produtos para ver informações</p>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
-        {!scannedFood ? (
-          <>
-            {/* Scanner Area */}
-            <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-lg p-8">
-              <div className="text-center space-y-6">
-                {isScanning ? (
-                  <>
-                    <div className="w-32 h-32 mx-auto rounded-full bg-[#4CAF50]/10 flex items-center justify-center animate-pulse">
-                      <Scan className="w-16 h-16 text-[#4CAF50]" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-lg mb-2">Escaneando...</h3>
-                      <p className="text-gray-500">Procurando produto no banco de dados</p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-32 h-32 mx-auto rounded-full bg-[#4CAF50]/10 flex items-center justify-center">
-                      <Camera className="w-16 h-16 text-[#4CAF50]" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-lg mb-2">Pronto para escanear</h3>
-                      <p className="text-gray-500">
-                        Aponte a câmera para o código de barras do produto
-                      </p>
-                    </div>
-                    <Button
-                      onClick={handleScan}
-                      className="w-full bg-[#4CAF50] hover:bg-[#2E7D32]"
-                      size="lg"
-                    >
-                      <Camera className="w-5 h-5 mr-2" />
-                      Abrir Câmera
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Manual Entry */}
-            <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-lg p-6">
-              <h3 className="font-bold mb-4">Busca Manual</h3>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Digite o código de barras"
-                  value={barcode}
-                  onChange={(e) => setBarcode(e.target.value)}
-                  className="flex-1"
-                />
-                <Button onClick={handleScan} className="bg-[#4CAF50] hover:bg-[#2E7D32]">
-                  Buscar
-                </Button>
-              </div>
-            </div>
-
-            {/* Info */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-6">
-              <div className="flex gap-3">
-                <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-blue-900 dark:text-blue-100">
-                  <p className="font-semibold mb-1">Como funciona?</p>
-                  <p>
-                    Escaneie o código de barras de qualquer produto alimentício para ver
-                    informações nutricionais detalhadas e uma avaliação de qualidade.
-                  </p>
+      <div className="max-w-lg mx-auto p-6 space-y-6">
+        {/* Scanner Area */}
+        {!scannedProduct && (
+          <div className="space-y-6">
+            <div className="bg-[#1E1E1E] rounded-3xl p-8 border-2 border-dashed border-[#2A2A2A] aspect-square flex flex-col items-center justify-center">
+              {isScanning ? (
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 border-4 border-[#4CAF50] border-t-transparent rounded-full animate-spin mx-auto" />
+                  <p className="text-[#B0B0B0]">Escaneando...</p>
                 </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Scanned Result */}
-            <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-lg overflow-hidden">
-              {/* Grade Badge */}
-              <div className={`${getGradeColor(scannedFood.grade)} p-6 text-white text-center`}>
-                <div className="text-6xl font-bold mb-2">{scannedFood.grade}</div>
-                <div className="text-lg">Nota: {scannedFood.score}/100</div>
-              </div>
-
-              <div className="p-6 space-y-6">
-                {/* Product Info */}
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">{scannedFood.name}</h2>
-                  <p className="text-gray-500">{scannedFood.category}</p>
-                </div>
-
-                {/* Nutrition Facts */}
-                <div>
-                  <h3 className="font-bold mb-3">Informação Nutricional</h3>
-                  <div className="text-sm text-gray-500 mb-2">
-                    Por {scannedFood.servingSize}{scannedFood.servingUnit}
+              ) : (
+                <div className="text-center space-y-4">
+                  <div className="w-24 h-24 rounded-full bg-[#4CAF50]/20 flex items-center justify-center mx-auto">
+                    <ScanBarcode className="w-12 h-12 text-[#4CAF50]" />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                      <div className="text-2xl font-bold text-[#4CAF50]">
-                        {scannedFood.calories}
-                      </div>
-                      <div className="text-sm text-gray-500">Calorias</div>
-                    </div>
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                      <div className="text-2xl font-bold">{scannedFood.protein}g</div>
-                      <div className="text-sm text-gray-500">Proteína</div>
-                    </div>
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                      <div className="text-2xl font-bold">{scannedFood.carbs}g</div>
-                      <div className="text-sm text-gray-500">Carboidratos</div>
-                    </div>
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                      <div className="text-2xl font-bold">{scannedFood.fat}g</div>
-                      <div className="text-sm text-gray-500">Gordura</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Alerts */}
-                {getAlerts(scannedFood).length > 0 && (
                   <div>
-                    <h3 className="font-bold mb-3">Alertas</h3>
-                    <div className="space-y-2">
-                      {getAlerts(scannedFood).map((alert, index) => (
-                        <div
-                          key={index}
-                          className={`flex items-center gap-3 p-3 rounded-lg ${
-                            alert.type === 'warning'
-                              ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-900 dark:text-yellow-100'
-                              : 'bg-green-50 dark:bg-green-900/20 text-green-900 dark:text-green-100'
-                          }`}
-                        >
-                          {alert.type === 'warning' ? (
-                            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
-                          ) : (
-                            <CheckCircle className="w-5 h-5 flex-shrink-0" />
-                          )}
-                          <span className="text-sm font-medium">{alert.message}</span>
-                        </div>
-                      ))}
-                    </div>
+                    <h3 className="font-semibold text-lg mb-2">Posicione o código de barras</h3>
+                    <p className="text-sm text-[#B0B0B0]">
+                      Centralize o código na câmera
+                    </p>
                   </div>
-                )}
+                </div>
+              )}
+            </div>
 
-                {/* Actions */}
-                <div className="flex gap-3">
-                  <Button
-                    onClick={() => {
-                      router.push('/nutrition');
-                    }}
-                    className="flex-1 bg-[#4CAF50] hover:bg-[#2E7D32]"
-                  >
-                    Adicionar à Refeição
-                  </Button>
-                  <Button
-                    onClick={() => setScannedFood(null)}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    Escanear Outro
-                  </Button>
+            <button
+              onClick={mockScan}
+              disabled={isScanning}
+              className="w-full bg-gradient-to-r from-[#4CAF50] to-[#66BB6A] text-white py-4 rounded-2xl font-semibold hover:shadow-lg hover:shadow-[#4CAF50]/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <Camera className="w-5 h-5" />
+              {isScanning ? 'Escaneando...' : 'Escanear Produto'}
+            </button>
+
+            <div className="bg-[#1E1E1E] rounded-2xl p-6 border border-[#2A2A2A]">
+              <h3 className="font-semibold mb-3">Como funciona?</h3>
+              <ul className="space-y-2 text-sm text-[#B0B0B0]">
+                <li className="flex gap-2">
+                  <span className="text-[#4CAF50]">1.</span>
+                  <span>Aponte a câmera para o código de barras</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#4CAF50]">2.</span>
+                  <span>Aguarde a leitura automática</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#4CAF50]">3.</span>
+                  <span>Veja as informações nutricionais</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Scanned Product */}
+        {scannedProduct && (
+          <div className="space-y-6">
+            {/* Product Info */}
+            <div className="bg-[#1E1E1E] rounded-2xl p-6 border border-[#2A2A2A]">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold mb-1">{scannedProduct.name}</h2>
+                  <p className="text-sm text-[#B0B0B0]">{scannedProduct.brand}</p>
+                </div>
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${getScoreColor(scannedProduct.score)}`}>
+                  <span className="text-3xl font-bold">{scannedProduct.score}</span>
+                </div>
+              </div>
+              <div className="text-xs text-[#666] mb-4">
+                Código: {scannedProduct.barcode}
+              </div>
+            </div>
+
+            {/* Nutrition Facts */}
+            <div className="bg-gradient-to-br from-[#4CAF50]/20 to-[#66BB6A]/10 border border-[#4CAF50]/30 rounded-2xl p-6">
+              <h3 className="font-semibold mb-4">Informações Nutricionais</h3>
+              <div className="text-sm text-[#B0B0B0] mb-4">Porção: {scannedProduct.portion}</div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[#B0B0B0]">Calorias</span>
+                  <span className="font-bold text-[#4CAF50] text-lg">{scannedProduct.calories} kcal</span>
+                </div>
+                <div className="h-px bg-[#2A2A2A]" />
+                <div className="flex justify-between items-center">
+                  <span className="text-[#B0B0B0]">Proteínas</span>
+                  <span className="font-semibold">{scannedProduct.protein}g</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[#B0B0B0]">Carboidratos</span>
+                  <span className="font-semibold">{scannedProduct.carbs}g</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[#B0B0B0]">Gorduras</span>
+                  <span className="font-semibold">{scannedProduct.fat}g</span>
                 </div>
               </div>
             </div>
-          </>
+
+            {/* Ingredients */}
+            <div className="bg-[#1E1E1E] rounded-2xl p-6 border border-[#2A2A2A]">
+              <h3 className="font-semibold mb-3">Ingredientes</h3>
+              <div className="flex flex-wrap gap-2">
+                {scannedProduct.ingredients.map((ingredient: string, index: number) => (
+                  <span
+                    key={index}
+                    className="bg-[#2A2A2A] px-3 py-1 rounded-full text-sm text-[#B0B0B0]"
+                  >
+                    {ingredient}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => setScannedProduct(null)}
+                className="bg-[#2A2A2A] text-white py-3 rounded-xl font-semibold hover:bg-[#333] transition-colors"
+              >
+                Escanear Outro
+              </button>
+              <button className="bg-gradient-to-r from-[#4CAF50] to-[#66BB6A] text-white py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-[#4CAF50]/20 transition-all">
+                Adicionar à Dieta
+              </button>
+            </div>
+          </div>
         )}
       </div>
 

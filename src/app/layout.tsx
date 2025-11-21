@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Nutrify - Saúde, Fitness e Nutrição",
-  description: "Seu app completo de treino, alimentação e bem-estar",
+  description: "Seu app completo de saúde, fitness e nutrição",
 };
 
 export default function RootLayout({
@@ -33,7 +33,7 @@ export default function RootLayout({
         <Script src="/lasy-bridge.js" strategy="beforeInteractive" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#121212] text-white`}
       >
         <NutrifyProvider>
           {children}

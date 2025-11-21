@@ -1,240 +1,134 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { BottomNav } from '@/components/nutrify/bottom-nav';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useNutrify } from '@/lib/nutrify-context';
-import { User, Settings, LogOut, Crown, Mail, Phone, Calendar } from 'lucide-react';
+import { User, Settings, Crown, LogOut, ChevronRight, Scale, Ruler, Calendar, Target } from 'lucide-react';
+import BottomNav from '@/components/bottom-nav';
 
 export default function ProfilePage() {
-  const router = useRouter();
-  const { user, setUser } = useNutrify();
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({
-    name: user?.name || '',
-    weight: user?.weight.toString() || '',
-    height: user?.height.toString() || '',
+  const [userData] = useState({
+    name: 'Usuário',
+    email: 'usuario@nutrify.com',
+    weight: 75,
+    height: 175,
+    age: 28,
+    goal: 'Emagrecer',
+    isPremium: false,
   });
 
-  const handleSave = () => {
-    if (user) {
-      setUser({
-        ...user,
-        name: editData.name,
-        weight: parseFloat(editData.weight) || user.weight,
-        height: parseFloat(editData.height) || user.height,
-      });
-      setIsEditing(false);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('nutrify_user');
-    localStorage.removeItem('nutrify_onboarding_completed');
-    localStorage.removeItem('nutrify_meals');
-    localStorage.removeItem('nutrify_water');
-    setUser(null);
-    router.push('/onboarding');
-  };
-
-  if (!user) return null;
-
   return (
-    <div className="min-h-screen bg-[#F7F9FA] dark:bg-[#121212] pb-20">
+    <div className="min-h-screen bg-[#121212] pb-20">
       {/* Header */}
-      <div className="bg-gradient-to-br from-[#4CAF50] to-[#2E7D32] text-white p-6">
-        <div className="max-w-lg mx-auto">
-          <h1 className="text-3xl font-bold mb-2">Perfil</h1>
-          <p className="text-white/80">Gerencie suas informações</p>
+      <div className="bg-gradient-to-b from-[#1E1E1E] to-[#121212] p-6 pb-8">
+        <div className="flex items-center gap-4">
+          <div className="w-20 h-20 bg-gradient-to-br from-[#4CAF50] to-[#66BB6A] rounded-full flex items-center justify-center">
+            <User className="w-10 h-10 text-white" />
+          </div>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-white">{userData.name}</h1>
+            <p className="text-[#B0B0B0] text-sm">{userData.email}</p>
+            {!userData.isPremium && (
+              <div className="flex items-center gap-1 mt-2 text-[#FFC107] text-xs">
+                <Crown className="w-3 h-3" />
+                <span>Plano Gratuito</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
-        {/* Profile Card */}
-        <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-lg p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#4CAF50] to-[#2E7D32] flex items-center justify-center text-white text-3xl font-bold">
-              {user.name.charAt(0).toUpperCase()}
+      {/* Stats Cards */}
+      <div className="px-6 -mt-4 mb-6">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-[#1E1E1E] p-4 rounded-xl border border-[#2A2A2A]">
+            <div className="flex items-center gap-2 mb-2">
+              <Scale className="w-4 h-4 text-[#4CAF50]" />
+              <span className="text-xs text-[#B0B0B0]">Peso</span>
             </div>
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold">{user.name}</h2>
-              <div className="flex items-center gap-2 mt-1">
-                {user.isPremium ? (
-                  <div className="flex items-center gap-1 text-[#FFC107]">
-                    <Crown className="w-4 h-4" />
-                    <span className="text-sm font-semibold">Premium</span>
-                  </div>
-                ) : (
-                  <span className="text-sm text-gray-500">Plano Gratuito</span>
-                )}
-              </div>
-            </div>
+            <p className="text-xl font-bold text-white">{userData.weight} kg</p>
           </div>
-
-          {!isEditing ? (
-            <>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800">
-                  <span className="text-gray-600 dark:text-gray-400">Idade</span>
-                  <span className="font-semibold">{user.age} anos</span>
-                </div>
-                <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800">
-                  <span className="text-gray-600 dark:text-gray-400">Peso</span>
-                  <span className="font-semibold">{user.weight} kg</span>
-                </div>
-                <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800">
-                  <span className="text-gray-600 dark:text-gray-400">Altura</span>
-                  <span className="font-semibold">{user.height} cm</span>
-                </div>
-                <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800">
-                  <span className="text-gray-600 dark:text-gray-400">Sexo</span>
-                  <span className="font-semibold capitalize">
-                    {user.gender === 'male' ? 'Masculino' : 'Feminino'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800">
-                  <span className="text-gray-600 dark:text-gray-400">Objetivo</span>
-                  <span className="font-semibold">
-                    {user.goal === 'lose_weight'
-                      ? 'Emagrecer'
-                      : user.goal === 'gain_muscle'
-                      ? 'Ganhar Massa'
-                      : 'Definir'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-3">
-                  <span className="text-gray-600 dark:text-gray-400">Nível de Atividade</span>
-                  <span className="font-semibold capitalize">
-                    {user.activityLevel === 'sedentary'
-                      ? 'Sedentário'
-                      : user.activityLevel === 'light'
-                      ? 'Leve'
-                      : user.activityLevel === 'moderate'
-                      ? 'Moderado'
-                      : 'Muito Ativo'}
-                  </span>
-                </div>
-              </div>
-
-              <Button
-                onClick={() => setIsEditing(true)}
-                className="w-full mt-6 bg-[#4CAF50] hover:bg-[#2E7D32]"
-              >
-                Editar Perfil
-              </Button>
-            </>
-          ) : (
-            <>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Nome</Label>
-                  <Input
-                    id="name"
-                    value={editData.name}
-                    onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="weight">Peso (kg)</Label>
-                  <Input
-                    id="weight"
-                    type="number"
-                    step="0.1"
-                    value={editData.weight}
-                    onChange={(e) => setEditData({ ...editData, weight: e.target.value })}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="height">Altura (cm)</Label>
-                  <Input
-                    id="height"
-                    type="number"
-                    value={editData.height}
-                    onChange={(e) => setEditData({ ...editData, height: e.target.value })}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3 mt-6">
-                <Button
-                  onClick={() => setIsEditing(false)}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  className="flex-1 bg-[#4CAF50] hover:bg-[#2E7D32]"
-                >
-                  Salvar
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Goals Card */}
-        <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-lg p-6">
-          <h3 className="font-bold mb-4">Metas Diárias</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Calorias</span>
-              <span className="font-semibold">{Math.round(user.dailyCalories)} kcal</span>
+          <div className="bg-[#1E1E1E] p-4 rounded-xl border border-[#2A2A2A]">
+            <div className="flex items-center gap-2 mb-2">
+              <Ruler className="w-4 h-4 text-[#4CAF50]" />
+              <span className="text-xs text-[#B0B0B0]">Altura</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Proteína</span>
-              <span className="font-semibold">{Math.round(user.macros?.protein || 0)}g</span>
+            <p className="text-xl font-bold text-white">{userData.height} cm</p>
+          </div>
+          <div className="bg-[#1E1E1E] p-4 rounded-xl border border-[#2A2A2A]">
+            <div className="flex items-center gap-2 mb-2">
+              <Calendar className="w-4 h-4 text-[#4CAF50]" />
+              <span className="text-xs text-[#B0B0B0]">Idade</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Carboidratos</span>
-              <span className="font-semibold">{Math.round(user.macros?.carbs || 0)}g</span>
+            <p className="text-xl font-bold text-white">{userData.age} anos</p>
+          </div>
+          <div className="bg-[#1E1E1E] p-4 rounded-xl border border-[#2A2A2A]">
+            <div className="flex items-center gap-2 mb-2">
+              <Target className="w-4 h-4 text-[#4CAF50]" />
+              <span className="text-xs text-[#B0B0B0]">Objetivo</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Gordura</span>
-              <span className="font-semibold">{Math.round(user.macros?.fat || 0)}g</span>
-            </div>
+            <p className="text-sm font-bold text-white">{userData.goal}</p>
           </div>
         </div>
+      </div>
 
-        {/* Premium Banner */}
-        {!user.isPremium && (
-          <div className="bg-gradient-to-r from-[#FFC107] to-[#FF9800] rounded-2xl shadow-lg p-6 text-white">
-            <div className="flex items-start gap-4">
-              <Crown className="w-8 h-8 flex-shrink-0" />
+      {/* Premium Banner */}
+      {!userData.isPremium && (
+        <div className="mx-6 mb-6">
+          <div className="bg-gradient-to-r from-[#FFC107] to-[#FFD54F] p-6 rounded-2xl">
+            <div className="flex items-start gap-3">
+              <Crown className="w-8 h-8 text-[#121212]" />
               <div className="flex-1">
-                <h3 className="font-bold text-lg mb-2">Upgrade para Premium</h3>
-                <p className="text-sm text-white/90 mb-4">
-                  Acesse treinos completos, IA ilimitada, planos personalizados e muito mais
+                <h3 className="text-lg font-bold text-[#121212] mb-1">
+                  Upgrade para Premium
+                </h3>
+                <p className="text-sm text-[#121212]/80 mb-3">
+                  Desbloqueie treinos avançados, planos personalizados e muito mais!
                 </p>
-                <Button className="bg-white text-[#FF9800] hover:bg-white/90">
-                  Ver Planos Premium
-                </Button>
+                <button className="bg-[#121212] text-[#FFC107] px-6 py-2 rounded-xl font-semibold text-sm hover:bg-[#1E1E1E] transition-colors">
+                  Ver Planos
+                </button>
               </div>
             </div>
           </div>
-        )}
-
-        {/* Settings */}
-        <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-lg overflow-hidden">
-          <button className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-            <Settings className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            <span className="flex-1 text-left font-medium">Configurações</span>
-          </button>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 p-4 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-600"
-          >
-            <LogOut className="w-5 h-5" />
-            <span className="flex-1 text-left font-medium">Sair</span>
-          </button>
         </div>
+      )}
+
+      {/* Menu Options */}
+      <div className="px-6 space-y-2">
+        <h2 className="text-sm font-semibold text-[#B0B0B0] mb-3 uppercase tracking-wider">
+          Configurações
+        </h2>
+
+        <button className="w-full bg-[#1E1E1E] p-4 rounded-xl border border-[#2A2A2A] flex items-center justify-between hover:border-[#4CAF50] transition-colors">
+          <div className="flex items-center gap-3">
+            <Settings className="w-5 h-5 text-[#4CAF50]" />
+            <span className="text-white">Editar Perfil</span>
+          </div>
+          <ChevronRight className="w-5 h-5 text-[#B0B0B0]" />
+        </button>
+
+        <button className="w-full bg-[#1E1E1E] p-4 rounded-xl border border-[#2A2A2A] flex items-center justify-between hover:border-[#4CAF50] transition-colors">
+          <div className="flex items-center gap-3">
+            <Target className="w-5 h-5 text-[#4CAF50]" />
+            <span className="text-white">Alterar Meta</span>
+          </div>
+          <ChevronRight className="w-5 h-5 text-[#B0B0B0]" />
+        </button>
+
+        <button className="w-full bg-[#1E1E1E] p-4 rounded-xl border border-[#2A2A2A] flex items-center justify-between hover:border-[#4CAF50] transition-colors">
+          <div className="flex items-center gap-3">
+            <Settings className="w-5 h-5 text-[#4CAF50]" />
+            <span className="text-white">Preferências</span>
+          </div>
+          <ChevronRight className="w-5 h-5 text-[#B0B0B0]" />
+        </button>
+
+        <button className="w-full bg-[#1E1E1E] p-4 rounded-xl border border-[#2A2A2A] flex items-center justify-between hover:border-red-500 transition-colors mt-6">
+          <div className="flex items-center gap-3">
+            <LogOut className="w-5 h-5 text-red-500" />
+            <span className="text-red-500">Sair</span>
+          </div>
+          <ChevronRight className="w-5 h-5 text-[#B0B0B0]" />
+        </button>
       </div>
 
       <BottomNav />

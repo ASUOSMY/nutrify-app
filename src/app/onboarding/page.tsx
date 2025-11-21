@@ -2,40 +2,33 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { useNutrify } from '@/lib/nutrify-context';
-import { Goal, ActivityLevel, Equipment } from '@/lib/types';
-import { Target, Activity, Dumbbell, User, Ruler, Weight, Calendar } from 'lucide-react';
+import { calculateBMR, calculateTDEE, calculateTargetCalories, calculateMacros } from '@/lib/nutrify-calculations';
+import { Goal, ActivityLevel, Equipment } from '@/lib/nutrify-types';
+import { mockWorkouts, mockChallenges } from '@/lib/nutrify-mock-data';
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { completeOnboarding } = useNutrify();
+  const { setUserProfile, setIsOnboarded, setWorkouts, setChallenges } = useNutrify();
   const [step, setStep] = useState(1);
-  const [data, setData] = useState({
-    goal: 'lose_weight' as Goal,
-    activityLevel: 'moderate' as ActivityLevel,
-    equipment: ['none'] as Equipment[],
-    name: '',
-    age: '',
-    weight: '',
-    height: '',
-    gender: 'male' as 'male' | 'female',
-  });
+  const totalSteps = 5;
+
+  // Form data
+  const [goal, setGoal] = useState<Goal>('lose');
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel>('moderate');
+  const [equipment, setEquipment] = useState<Equipment[]>(['bodyweight']);
+  const [name, setName] = useState('');
+  const [age, setAge] = useState('25');
+  const [weight, setWeight] = useState('70');
+  const [height, setHeight] = useState('170');
+  const [gender, setGender] = useState<'male' | 'female'>('male');
 
   const handleNext = () => {
-    if (step < 5) {
+    if (step < totalSteps) {
       setStep(step + 1);
     } else {
-      completeOnboarding({
-        ...data,
-        age: parseInt(data.age),
-        weight: parseFloat(data.weight),
-        height: parseFloat(data.height),
-      });
-      router.push('/dashboard');
+      handleComplete();
     }
   };
 
@@ -43,277 +36,333 @@ export default function OnboardingPage() {
     if (step > 1) setStep(step - 1);
   };
 
+  const handleComplete = () => {
+    const bmr = calculateBMR(Number(weight), Number(height), Number(age), gender);
+    const tdee = calculateTDEE(bmr, activityLevel);
+    const targetCalories = calculateTargetCalories(tdee, goal);
+    const macros = calculateMacros(targetCalories, goal);
+
+    const profile = {
+      name,
+      age: Number(age),
+      weight: Number(weight),
+      height: Number(height),
+      gender,
+      goal,
+      activityLevel,
+      equipment,
+      targetCalories,
+      targetProtein: macros.protein,
+      targetCarbs: macros.carbs,
+      targetFat: macros.fat,
+    };
+
+    setUserProfile(profile);
+    setWorkouts(mockWorkouts);
+    setChallenges(mockChallenges);
+    setIsOnboarded(true);
+    router.push('/dashboard');
+  };
+
+  const toggleEquipment = (eq: Equipment) => {
+    if (equipment.includes(eq)) {
+      setEquipment(equipment.filter(e => e !== eq));
+    } else {
+      setEquipment([...equipment, eq]);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#4CAF50] to-[#2E7D32] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white dark:bg-[#1E1E1E] rounded-3xl shadow-2xl p-8">
-        {/* Progress */}
-        <div className="flex gap-2 mb-8">
-          {[1, 2, 3, 4, 5].map((s) => (
+    <div className="min-h-screen bg-[#121212] flex flex-col">
+      {/* Progress Bar */}
+      <div className="bg-[#1E1E1E] p-4">
+        <div className="max-w-lg mx-auto">
+          <div className="flex justify-between mb-2">
+            <span className="text-sm text-[#B0B0B0]">Passo {step} de {totalSteps}</span>
+            <span className="text-sm text-[#4CAF50]">{Math.round((step / totalSteps) * 100)}%</span>
+          </div>
+          <div className="h-2 bg-[#2A2A2A] rounded-full overflow-hidden">
             <div
-              key={s}
-              className={`h-2 flex-1 rounded-full transition-all ${
-                s <= step ? 'bg-[#4CAF50]' : 'bg-gray-200 dark:bg-gray-700'
-              }`}
+              className="h-full bg-gradient-to-r from-[#4CAF50] to-[#66BB6A] transition-all duration-300"
+              style={{ width: `${(step / totalSteps) * 100}%` }}
             />
-          ))}
+          </div>
         </div>
+      </div>
 
-        {/* Step 1: Goal */}
-        {step === 1 && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <Target className="w-16 h-16 mx-auto mb-4 text-[#4CAF50]" />
-              <h2 className="text-2xl font-bold mb-2">Qual seu objetivo?</h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                Vamos personalizar seu plano
-              </p>
-            </div>
-
-            <RadioGroup
-              value={data.goal}
-              onValueChange={(value) => setData({ ...data, goal: value as Goal })}
-              className="space-y-3"
-            >
-              <div className="flex items-center space-x-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4 cursor-pointer hover:border-[#4CAF50] transition-colors">
-                <RadioGroupItem value="lose_weight" id="lose" />
-                <Label htmlFor="lose" className="flex-1 cursor-pointer">
-                  <div className="font-semibold">Emagrecer</div>
-                  <div className="text-sm text-gray-500">Perder peso de forma saudável</div>
-                </Label>
+      {/* Content */}
+      <div className="flex-1 p-6 overflow-y-auto pb-24">
+        <div className="max-w-lg mx-auto">
+          {/* Step 1: Goal */}
+          {step === 1 && (
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold mb-2">Qual seu objetivo?</h1>
+                <p className="text-[#B0B0B0]">Vamos personalizar seu plano</p>
               </div>
 
-              <div className="flex items-center space-x-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4 cursor-pointer hover:border-[#4CAF50] transition-colors">
-                <RadioGroupItem value="gain_muscle" id="gain" />
-                <Label htmlFor="gain" className="flex-1 cursor-pointer">
-                  <div className="font-semibold">Ganhar Massa</div>
-                  <div className="text-sm text-gray-500">Construir músculos</div>
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4 cursor-pointer hover:border-[#4CAF50] transition-colors">
-                <RadioGroupItem value="get_toned" id="tone" />
-                <Label htmlFor="tone" className="flex-1 cursor-pointer">
-                  <div className="font-semibold">Definir</div>
-                  <div className="text-sm text-gray-500">Tonificar e definir</div>
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-        )}
-
-        {/* Step 2: Activity Level */}
-        {step === 2 && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <Activity className="w-16 h-16 mx-auto mb-4 text-[#4CAF50]" />
-              <h2 className="text-2xl font-bold mb-2">Nível de Atividade</h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                Qual sua rotina atual?
-              </p>
-            </div>
-
-            <RadioGroup
-              value={data.activityLevel}
-              onValueChange={(value) =>
-                setData({ ...data, activityLevel: value as ActivityLevel })
-              }
-              className="space-y-3"
-            >
-              <div className="flex items-center space-x-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4 cursor-pointer hover:border-[#4CAF50] transition-colors">
-                <RadioGroupItem value="sedentary" id="sed" />
-                <Label htmlFor="sed" className="flex-1 cursor-pointer">
-                  <div className="font-semibold">Sedentário</div>
-                  <div className="text-sm text-gray-500">Pouco ou nenhum exercício</div>
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4 cursor-pointer hover:border-[#4CAF50] transition-colors">
-                <RadioGroupItem value="light" id="light" />
-                <Label htmlFor="light" className="flex-1 cursor-pointer">
-                  <div className="font-semibold">Leve</div>
-                  <div className="text-sm text-gray-500">Exercício 1-3x/semana</div>
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4 cursor-pointer hover:border-[#4CAF50] transition-colors">
-                <RadioGroupItem value="moderate" id="mod" />
-                <Label htmlFor="mod" className="flex-1 cursor-pointer">
-                  <div className="font-semibold">Moderado</div>
-                  <div className="text-sm text-gray-500">Exercício 3-5x/semana</div>
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4 cursor-pointer hover:border-[#4CAF50] transition-colors">
-                <RadioGroupItem value="very_active" id="very" />
-                <Label htmlFor="very" className="flex-1 cursor-pointer">
-                  <div className="font-semibold">Muito Ativo</div>
-                  <div className="text-sm text-gray-500">Exercício 6-7x/semana</div>
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-        )}
-
-        {/* Step 3: Equipment */}
-        {step === 3 && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <Dumbbell className="w-16 h-16 mx-auto mb-4 text-[#4CAF50]" />
-              <h2 className="text-2xl font-bold mb-2">Equipamentos</h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                O que você tem disponível?
-              </p>
-            </div>
-
-            <RadioGroup
-              value={data.equipment[0]}
-              onValueChange={(value) =>
-                setData({ ...data, equipment: [value as Equipment] })
-              }
-              className="space-y-3"
-            >
-              <div className="flex items-center space-x-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4 cursor-pointer hover:border-[#4CAF50] transition-colors">
-                <RadioGroupItem value="none" id="none" />
-                <Label htmlFor="none" className="flex-1 cursor-pointer">
-                  <div className="font-semibold">Nenhum</div>
-                  <div className="text-sm text-gray-500">Treino em casa sem equipamento</div>
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4 cursor-pointer hover:border-[#4CAF50] transition-colors">
-                <RadioGroupItem value="dumbbells" id="dumb" />
-                <Label htmlFor="dumb" className="flex-1 cursor-pointer">
-                  <div className="font-semibold">Halteres</div>
-                  <div className="text-sm text-gray-500">Tenho halteres em casa</div>
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4 cursor-pointer hover:border-[#4CAF50] transition-colors">
-                <RadioGroupItem value="resistance_bands" id="bands" />
-                <Label htmlFor="bands" className="flex-1 cursor-pointer">
-                  <div className="font-semibold">Elásticos</div>
-                  <div className="text-sm text-gray-500">Faixas de resistência</div>
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-        )}
-
-        {/* Step 4: Personal Info */}
-        {step === 4 && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <User className="w-16 h-16 mx-auto mb-4 text-[#4CAF50]" />
-              <h2 className="text-2xl font-bold mb-2">Sobre Você</h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                Informações básicas
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Nome</Label>
-                <Input
-                  id="name"
-                  value={data.name}
-                  onChange={(e) => setData({ ...data, name: e.target.value })}
-                  placeholder="Seu nome"
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label>Sexo</Label>
-                <RadioGroup
-                  value={data.gender}
-                  onValueChange={(value) =>
-                    setData({ ...data, gender: value as 'male' | 'female' })
-                  }
-                  className="flex gap-4 mt-2"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="male" id="male" />
-                    <Label htmlFor="male">Masculino</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="female" id="female" />
-                    <Label htmlFor="female">Feminino</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div>
-                <Label htmlFor="age">Idade</Label>
-                <Input
-                  id="age"
-                  type="number"
-                  value={data.age}
-                  onChange={(e) => setData({ ...data, age: e.target.value })}
-                  placeholder="25"
-                  className="mt-1"
-                />
+              <div className="space-y-4">
+                {[
+                  { value: 'lose' as Goal, emoji: '🔥', title: 'Emagrecer', desc: 'Perder gordura e definir' },
+                  { value: 'gain' as Goal, emoji: '💪', title: 'Ganhar Massa', desc: 'Aumentar músculos' },
+                  { value: 'maintain' as Goal, emoji: '⚖️', title: 'Manter Forma', desc: 'Manter peso atual' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setGoal(option.value)}
+                    className={`w-full p-6 rounded-2xl border-2 transition-all ${
+                      goal === option.value
+                        ? 'border-[#4CAF50] bg-[#4CAF50]/10'
+                        : 'border-[#2A2A2A] bg-[#1E1E1E] hover:border-[#4CAF50]/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="text-4xl">{option.emoji}</div>
+                      <div className="text-left">
+                        <div className="font-semibold text-lg">{option.title}</div>
+                        <div className="text-sm text-[#B0B0B0]">{option.desc}</div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Step 5: Body Metrics */}
-        {step === 5 && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <Ruler className="w-16 h-16 mx-auto mb-4 text-[#4CAF50]" />
-              <h2 className="text-2xl font-bold mb-2">Medidas</h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                Para calcular suas metas
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="weight">Peso (kg)</Label>
-                <Input
-                  id="weight"
-                  type="number"
-                  step="0.1"
-                  value={data.weight}
-                  onChange={(e) => setData({ ...data, weight: e.target.value })}
-                  placeholder="70"
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="height">Altura (cm)</Label>
-                <Input
-                  id="height"
-                  type="number"
-                  value={data.height}
-                  onChange={(e) => setData({ ...data, height: e.target.value })}
-                  placeholder="170"
-                  className="mt-1"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Navigation */}
-        <div className="flex gap-3 mt-8">
-          {step > 1 && (
-            <Button
-              onClick={handleBack}
-              variant="outline"
-              className="flex-1"
-            >
-              Voltar
-            </Button>
           )}
-          <Button
+
+          {/* Step 2: Activity Level */}
+          {step === 2 && (
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold mb-2">Nível de Atividade</h1>
+                <p className="text-[#B0B0B0]">Qual sua rotina atual?</p>
+              </div>
+
+              <div className="space-y-4">
+                {[
+                  { value: 'sedentary' as ActivityLevel, title: 'Sedentário', desc: 'Pouco ou nenhum exercício' },
+                  { value: 'light' as ActivityLevel, title: 'Leve', desc: '1-3 dias por semana' },
+                  { value: 'moderate' as ActivityLevel, title: 'Moderado', desc: '3-5 dias por semana' },
+                  { value: 'active' as ActivityLevel, title: 'Ativo', desc: '6-7 dias por semana' },
+                  { value: 'very_active' as ActivityLevel, title: 'Muito Ativo', desc: 'Atleta ou trabalho físico' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setActivityLevel(option.value)}
+                    className={`w-full p-4 rounded-2xl border-2 transition-all ${
+                      activityLevel === option.value
+                        ? 'border-[#4CAF50] bg-[#4CAF50]/10'
+                        : 'border-[#2A2A2A] bg-[#1E1E1E] hover:border-[#4CAF50]/50'
+                    }`}
+                  >
+                    <div className="text-left">
+                      <div className="font-semibold">{option.title}</div>
+                      <div className="text-sm text-[#B0B0B0]">{option.desc}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Equipment */}
+          {step === 3 && (
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold mb-2">Equipamentos</h1>
+                <p className="text-[#B0B0B0]">O que você tem disponível?</p>
+              </div>
+
+              <div className="space-y-4">
+                {[
+                  { value: 'bodyweight' as Equipment, emoji: '🤸', title: 'Peso Corporal', desc: 'Sem equipamento' },
+                  { value: 'dumbbells' as Equipment, emoji: '🏋️', title: 'Halteres', desc: 'Pesos livres' },
+                  { value: 'resistance_bands' as Equipment, emoji: '🎗️', title: 'Faixas Elásticas', desc: 'Bandas de resistência' },
+                  { value: 'full_gym' as Equipment, emoji: '🏢', title: 'Academia', desc: 'Acesso completo' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => toggleEquipment(option.value)}
+                    className={`w-full p-4 rounded-2xl border-2 transition-all ${
+                      equipment.includes(option.value)
+                        ? 'border-[#4CAF50] bg-[#4CAF50]/10'
+                        : 'border-[#2A2A2A] bg-[#1E1E1E] hover:border-[#4CAF50]/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="text-3xl">{option.emoji}</div>
+                      <div className="text-left">
+                        <div className="font-semibold">{option.title}</div>
+                        <div className="text-sm text-[#B0B0B0]">{option.desc}</div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Personal Data */}
+          {step === 4 && (
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold mb-2">Dados Pessoais</h1>
+                <p className="text-[#B0B0B0]">Para calcular suas metas</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-[#B0B0B0] mb-2">Nome</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Seu nome"
+                    className="w-full bg-[#1E1E1E] border border-[#2A2A2A] rounded-xl p-4 text-white placeholder:text-[#666] focus:border-[#4CAF50] focus:outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-[#B0B0B0] mb-2">Idade</label>
+                    <input
+                      type="number"
+                      value={age}
+                      onChange={(e) => setAge(e.target.value)}
+                      className="w-full bg-[#1E1E1E] border border-[#2A2A2A] rounded-xl p-4 text-white focus:border-[#4CAF50] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-[#B0B0B0] mb-2">Sexo</label>
+                    <select
+                      value={gender}
+                      onChange={(e) => setGender(e.target.value as 'male' | 'female')}
+                      className="w-full bg-[#1E1E1E] border border-[#2A2A2A] rounded-xl p-4 text-white focus:border-[#4CAF50] focus:outline-none"
+                    >
+                      <option value="male">Masculino</option>
+                      <option value="female">Feminino</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-[#B0B0B0] mb-2">Peso (kg)</label>
+                    <input
+                      type="number"
+                      value={weight}
+                      onChange={(e) => setWeight(e.target.value)}
+                      className="w-full bg-[#1E1E1E] border border-[#2A2A2A] rounded-xl p-4 text-white focus:border-[#4CAF50] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-[#B0B0B0] mb-2">Altura (cm)</label>
+                    <input
+                      type="number"
+                      value={height}
+                      onChange={(e) => setHeight(e.target.value)}
+                      className="w-full bg-[#1E1E1E] border border-[#2A2A2A] rounded-xl p-4 text-white focus:border-[#4CAF50] focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 5: Summary */}
+          {step === 5 && (
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold mb-2">Tudo Pronto! 🎉</h1>
+                <p className="text-[#B0B0B0]">Suas metas foram calculadas</p>
+              </div>
+
+              <div className="bg-gradient-to-br from-[#4CAF50]/20 to-[#66BB6A]/10 border border-[#4CAF50]/30 rounded-2xl p-6 space-y-4">
+                <div className="text-center">
+                  <div className="text-5xl font-bold text-[#4CAF50] mb-2">
+                    {calculateTargetCalories(
+                      calculateTDEE(
+                        calculateBMR(Number(weight), Number(height), Number(age), gender),
+                        activityLevel
+                      ),
+                      goal
+                    )}
+                  </div>
+                  <div className="text-[#B0B0B0]">Calorias diárias</div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[#4CAF50]/20">
+                  {(() => {
+                    const macros = calculateMacros(
+                      calculateTargetCalories(
+                        calculateTDEE(
+                          calculateBMR(Number(weight), Number(height), Number(age), gender),
+                          activityLevel
+                        ),
+                        goal
+                      ),
+                      goal
+                    );
+                    return (
+                      <>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-[#4CAF50]">{macros.protein}g</div>
+                          <div className="text-xs text-[#B0B0B0]">Proteína</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-[#FFC107]">{macros.carbs}g</div>
+                          <div className="text-xs text-[#B0B0B0]">Carboidratos</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-[#FF9800]">{macros.fat}g</div>
+                          <div className="text-xs text-[#B0B0B0]">Gorduras</div>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              <div className="bg-[#1E1E1E] rounded-2xl p-6 space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-[#B0B0B0]">Objetivo:</span>
+                  <span className="font-semibold">
+                    {goal === 'lose' ? 'Emagrecer' : goal === 'gain' ? 'Ganhar Massa' : 'Manter Forma'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#B0B0B0]">Atividade:</span>
+                  <span className="font-semibold capitalize">{activityLevel.replace('_', ' ')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#B0B0B0]">Equipamentos:</span>
+                  <span className="font-semibold">{equipment.length} selecionados</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Navigation Buttons */}
+      <div className="fixed bottom-0 left-0 right-0 bg-[#1E1E1E] border-t border-[#2A2A2A] p-4">
+        <div className="max-w-lg mx-auto flex gap-4">
+          {step > 1 && (
+            <button
+              onClick={handleBack}
+              className="flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-[#2A2A2A] text-white hover:bg-[#333] transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              Voltar
+            </button>
+          )}
+          <button
             onClick={handleNext}
-            className="flex-1 bg-[#4CAF50] hover:bg-[#2E7D32]"
+            disabled={step === 4 && !name}
+            className="flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-gradient-to-r from-[#4CAF50] to-[#66BB6A] text-white font-semibold hover:shadow-lg hover:shadow-[#4CAF50]/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {step === 5 ? 'Começar' : 'Próximo'}
-          </Button>
+            {step === totalSteps ? 'Começar' : 'Continuar'}
+            <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
       </div>
     </div>

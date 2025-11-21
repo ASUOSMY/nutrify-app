@@ -1,70 +1,73 @@
-"use client";
+'use client';
 
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Apple, Dumbbell, Heart, TrendingUp } from "lucide-react";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Dumbbell, Sparkles } from 'lucide-react';
 
 export default function Home() {
   const router = useRouter();
 
-  const handleStart = () => {
-    router.push("/dashboard");
-  };
+  useEffect(() => {
+    // Verificar se usuário já fez onboarding
+    const onboarded = localStorage.getItem('nutrify_onboarded');
+    if (onboarded === 'true') {
+      router.push('/dashboard');
+    }
+  }, [router]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-400 via-green-500 to-green-600">
-      {/* Hero Section */}
-      <div className="container mx-auto px-4 py-16 md:py-24">
-        <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-7xl font-bold text-white mb-6">
+    <div className="min-h-screen bg-gradient-to-b from-[#121212] via-[#1a2e1a] to-[#121212] flex flex-col items-center justify-center p-6">
+      <div className="max-w-md w-full text-center space-y-8">
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <div className="relative">
+            <div className="absolute inset-0 bg-[#4CAF50] blur-3xl opacity-30 rounded-full"></div>
+            <Dumbbell className="w-20 h-20 text-[#4CAF50] relative" />
+          </div>
+        </div>
+
+        {/* Título */}
+        <div className="space-y-4">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-[#4CAF50] to-[#81C784] bg-clip-text text-transparent">
             Nutrify
           </h1>
-          <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Seu app completo de treino, alimentação e bem-estar
+          <p className="text-xl text-[#B0B0B0]">
+            Sua jornada de transformação começa aqui
           </p>
-          <Button 
-            onClick={handleStart}
-            size="lg"
-            className="bg-white text-green-600 hover:bg-green-50 text-lg px-8 py-6 rounded-full shadow-2xl hover:scale-105 transition-all duration-300"
-          >
-            Começar Agora
-          </Button>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-20">
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center hover:bg-white/20 transition-all duration-300">
-            <div className="bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Apple className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Nutrição</h3>
-            <p className="text-white/80">Planeje suas refeições e acompanhe calorias</p>
+        {/* Features */}
+        <div className="grid grid-cols-2 gap-4 my-12">
+          <div className="bg-[#1E1E1E] p-4 rounded-2xl border border-[#2A2A2A]">
+            <div className="text-3xl mb-2">🍎</div>
+            <p className="text-sm text-[#B0B0B0]">Nutrição Inteligente</p>
           </div>
-
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center hover:bg-white/20 transition-all duration-300">
-            <div className="bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Dumbbell className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Treinos</h3>
-            <p className="text-white/80">Exercícios personalizados para seus objetivos</p>
+          <div className="bg-[#1E1E1E] p-4 rounded-2xl border border-[#2A2A2A]">
+            <div className="text-3xl mb-2">💪</div>
+            <p className="text-sm text-[#B0B0B0]">Treinos Personalizados</p>
           </div>
-
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center hover:bg-white/20 transition-all duration-300">
-            <div className="bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <TrendingUp className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Progresso</h3>
-            <p className="text-white/80">Acompanhe sua evolução com gráficos</p>
+          <div className="bg-[#1E1E1E] p-4 rounded-2xl border border-[#2A2A2A]">
+            <div className="text-3xl mb-2">📊</div>
+            <p className="text-sm text-[#B0B0B0]">Progresso Visual</p>
           </div>
-
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center hover:bg-white/20 transition-all duration-300">
-            <div className="bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Heart className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Bem-estar</h3>
-            <p className="text-white/80">Cuide da sua saúde física e mental</p>
+          <div className="bg-[#1E1E1E] p-4 rounded-2xl border border-[#2A2A2A]">
+            <div className="text-3xl mb-2">🤖</div>
+            <p className="text-sm text-[#B0B0B0]">Coach IA</p>
           </div>
         </div>
+
+        {/* CTA Button */}
+        <button
+          onClick={() => router.push('/onboarding')}
+          className="w-full bg-gradient-to-r from-[#4CAF50] to-[#66BB6A] text-white py-4 rounded-2xl font-semibold text-lg shadow-lg shadow-[#4CAF50]/20 hover:shadow-[#4CAF50]/40 transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2"
+        >
+          <Sparkles className="w-5 h-5" />
+          Começar Agora
+        </button>
+
+        <p className="text-xs text-[#B0B0B0] mt-4">
+          Transforme seu corpo e mente em 21 dias
+        </p>
       </div>
     </div>
   );

@@ -1,155 +1,184 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { BottomNav } from '@/components/nutrify/bottom-nav';
-import { Button } from '@/components/ui/button';
-import { mockWorkouts } from '@/lib/mock-data';
-import { Dumbbell, Clock, Flame, Play, CheckCircle2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ChevronLeft, Play, Check, Clock } from 'lucide-react';
+import { useNutrify } from '@/lib/nutrify-context';
+import BottomNav from '@/components/bottom-nav';
 
 export default function WorkoutsPage() {
-  const [completedWorkouts, setCompletedWorkouts] = useState<string[]>([]);
+  const router = useRouter();
+  const { workouts, setWorkouts } = useNutrify();
+  const [selectedWorkout, setSelectedWorkout] = useState<string | null>(null);
+  const [activeExercise, setActiveExercise] = useState(0);
+  const [isWorkoutActive, setIsWorkoutActive] = useState(false);
 
-  const weekDays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+  const handleCompleteWorkout = (workoutId: string) => {
+    const updated = workouts.map(w =>
+      w.id === workoutId ? { ...w, completed: true } : w
+    );
+    setWorkouts(updated);
+    setIsWorkoutActive(false);
+    setSelectedWorkout(null);
+    setActiveExercise(0);
+  };
+
+  const currentWorkout = workouts.find(w => w.id === selectedWorkout);
+
+  if (selectedWorkout && currentWorkout) {
+    return (
+      <div className="min-h-screen bg-[#121212]">
+        {/* Header */}
+        <div className="bg-[#1E1E1E] p-4 border-b border-[#2A2A2A]">
+          <div className="max-w-lg mx-auto flex items-center gap-4">
+            <button
+              onClick={() => {
+                setSelectedWorkout(null);
+                setIsWorkoutActive(false);
+                setActiveExercise(0);
+              }}
+              className="w-10 h-10 rounded-full bg-[#2A2A2A] flex items-center justify-center hover:bg-[#333] transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div className="flex-1">
+              <h1 className="font-bold">{currentWorkout.name}</h1>
+              <p className="text-sm text-[#B0B0B0]">
+                Exercício {activeExercise + 1} de {currentWorkout.exercises.length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Exercise Content */}
+        <div className="max-w-lg mx-auto p-6 space-y-6">
+          {currentWorkout.exercises.map((exercise, index) => (
+            <div
+              key={exercise.id}
+              className={`bg-[#1E1E1E] rounded-2xl p-6 border-2 transition-all ${
+                index === activeExercise
+                  ? 'border-[#4CAF50]'
+                  : index < activeExercise
+                  ? 'border-[#2A2A2A] opacity-50'
+                  : 'border-[#2A2A2A]'
+              }`}
+            >
+              <div className="flex items-start gap-4 mb-4">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  index < activeExercise ? 'bg-[#4CAF50]' : 'bg-[#2A2A2A]'
+                }`}>
+                  {index < activeExercise ? (
+                    <Check className="w-5 h-5 text-white" />
+                  ) : (
+                    <span className="text-sm font-bold">{index + 1}</span>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-lg mb-1">{exercise.name}</h3>
+                  <p className="text-sm text-[#B0B0B0] mb-3">{exercise.description}</p>
+                  <div className="flex gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-[#4CAF50]/20 flex items-center justify-center">
+                        <span className="text-[#4CAF50] font-bold">{exercise.sets}</span>
+                      </div>
+                      <span className="text-[#B0B0B0]">séries</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-[#FFC107]/20 flex items-center justify-center">
+                        <span className="text-[#FFC107] font-bold text-xs">{exercise.reps}</span>
+                      </div>
+                      <span className="text-[#B0B0B0]">reps</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-[#B0B0B0]" />
+                      <span className="text-[#B0B0B0]">{exercise.rest}s</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {index === activeExercise && (
+                <button
+                  onClick={() => {
+                    if (activeExercise < currentWorkout.exercises.length - 1) {
+                      setActiveExercise(activeExercise + 1);
+                    } else {
+                      handleCompleteWorkout(currentWorkout.id);
+                    }
+                  }}
+                  className="w-full bg-gradient-to-r from-[#4CAF50] to-[#66BB6A] text-white py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-[#4CAF50]/20 transition-all"
+                >
+                  {activeExercise < currentWorkout.exercises.length - 1 ? 'Próximo Exercício' : 'Concluir Treino'}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#F7F9FA] dark:bg-[#121212] pb-20">
+    <div className="min-h-screen bg-[#121212] pb-20">
       {/* Header */}
-      <div className="bg-gradient-to-br from-[#4CAF50] to-[#2E7D32] text-white p-6">
+      <div className="bg-[#1E1E1E] p-6 border-b border-[#2A2A2A]">
         <div className="max-w-lg mx-auto">
-          <h1 className="text-3xl font-bold mb-2">Treinos</h1>
-          <p className="text-white/80">Seu plano semanal personalizado</p>
+          <h1 className="text-2xl font-bold mb-2">Treinos</h1>
+          <p className="text-[#B0B0B0]">Seu plano semanal personalizado</p>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
-        {/* Week Overview */}
-        <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-lg p-6">
-          <h2 className="font-bold mb-4">Semana Atual</h2>
-          <div className="flex justify-between">
-            {weekDays.map((day, index) => {
-              const hasWorkout = mockWorkouts.some((w) => w.day === index + 1);
-              const isCompleted = completedWorkouts.includes(`day-${index + 1}`);
-
-              return (
-                <div key={day} className="text-center">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${
-                      isCompleted
-                        ? 'bg-[#4CAF50] text-white'
-                        : hasWorkout
-                        ? 'bg-[#4CAF50]/20 text-[#4CAF50]'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-400'
-                    }`}
+      {/* Workouts List */}
+      <div className="max-w-lg mx-auto p-6 space-y-4">
+        {workouts.map((workout) => (
+          <div
+            key={workout.id}
+            className={`bg-[#1E1E1E] rounded-2xl p-6 border-2 transition-all ${
+              workout.completed
+                ? 'border-[#4CAF50] bg-[#4CAF50]/5'
+                : 'border-[#2A2A2A] hover:border-[#4CAF50]/50'
+            }`}
+          >
+            <div className="flex items-start gap-4">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                workout.completed ? 'bg-[#4CAF50]' : 'bg-[#2A2A2A]'
+              }`}>
+                {workout.completed ? (
+                  <Check className="w-6 h-6 text-white" />
+                ) : (
+                  <Play className="w-6 h-6 text-[#B0B0B0]" />
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-bold text-lg">{workout.name}</h3>
+                  {workout.completed && (
+                    <span className="text-xs bg-[#4CAF50]/20 text-[#4CAF50] px-2 py-1 rounded-full">
+                      Concluído
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-[#B0B0B0] mb-3">{workout.day}</p>
+                <div className="flex items-center gap-4 text-sm text-[#B0B0B0] mb-4">
+                  <span>{workout.exercises.length} exercícios</span>
+                  <span>•</span>
+                  <span>{workout.duration} minutos</span>
+                </div>
+                {!workout.completed && (
+                  <button
+                    onClick={() => {
+                      setSelectedWorkout(workout.id);
+                      setIsWorkoutActive(true);
+                    }}
+                    className="w-full bg-gradient-to-r from-[#4CAF50] to-[#66BB6A] text-white py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-[#4CAF50]/20 transition-all"
                   >
-                    {isCompleted ? (
-                      <CheckCircle2 className="w-5 h-5" />
-                    ) : hasWorkout ? (
-                      <Dumbbell className="w-4 h-4" />
-                    ) : (
-                      '-'
-                    )}
-                  </div>
-                  <div className="text-xs text-gray-500">{day}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Workouts List */}
-        <div className="space-y-4">
-          <h2 className="font-bold text-lg">Treinos Disponíveis</h2>
-
-          {mockWorkouts.map((workout) => {
-            const isCompleted = completedWorkouts.includes(workout.id);
-
-            return (
-              <div
-                key={workout.id}
-                className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-lg overflow-hidden"
-              >
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="font-bold text-lg mb-1">{workout.name}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {workout.description}
-                      </p>
-                    </div>
-                    {isCompleted && (
-                      <CheckCircle2 className="w-6 h-6 text-[#4CAF50] flex-shrink-0 ml-2" />
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{workout.totalDuration} min</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Flame className="w-4 h-4" />
-                      <span>{workout.caloriesBurn} cal</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Dumbbell className="w-4 h-4" />
-                      <span className="capitalize">{workout.difficulty}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 mb-4">
-                    {workout.equipment.map((eq) => (
-                      <span
-                        key={eq}
-                        className="px-3 py-1 bg-[#4CAF50]/10 text-[#4CAF50] text-xs rounded-full"
-                      >
-                        {eq === 'none' ? 'Sem equipamento' : eq}
-                      </span>
-                    ))}
-                  </div>
-
-                  <Link href={`/workouts/${workout.id}`}>
-                    <Button
-                      className={`w-full ${
-                        isCompleted
-                          ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                          : 'bg-[#4CAF50] hover:bg-[#2E7D32]'
-                      }`}
-                    >
-                      <Play className="w-4 h-4 mr-2" />
-                      {isCompleted ? 'Treinar Novamente' : 'Iniciar Treino'}
-                    </Button>
-                  </Link>
-                </div>
+                    Iniciar Treino
+                  </button>
+                )}
               </div>
-            );
-          })}
-        </div>
-
-        {/* Stats */}
-        <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-lg p-6">
-          <h3 className="font-bold mb-4">Estatísticas da Semana</h3>
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-[#4CAF50]">
-                {completedWorkouts.length}
-              </div>
-              <div className="text-sm text-gray-500">Treinos</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-[#FFC107]">
-                {completedWorkouts.length * 150}
-              </div>
-              <div className="text-sm text-gray-500">Calorias</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-blue-500">
-                {completedWorkouts.length * 20}
-              </div>
-              <div className="text-sm text-gray-500">Minutos</div>
             </div>
           </div>
-        </div>
+        ))}
       </div>
 
       <BottomNav />
